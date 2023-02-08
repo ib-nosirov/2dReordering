@@ -14,6 +14,8 @@
 clear;
 close all;
 N = 100;
+% a set of (x,y) points with an appended 0/1 vector indicating whether each
+% point has been visited.
 dim2Points = [randn(2,100);ones(1,100)];
 % Create a radial-basis function kernel
 rbfKernel = @(x,y) exp(-norm(x-y)^2);
@@ -30,26 +32,26 @@ end
 %figure(1)
 %imagesc(K)
 
-validPoints = dim2Points(1:2,dim2Points(3,:) == 1);
-validPtIndices = find(dim2Points(3,:) == 1);
-focus = validPoints(1:2,end);
+% pick the first element in a random set to be the focus point.
+focusPt = dim2Points(1:2,1);
+% this point's distance will no longer be considered.
+dim2Points(3,1) = 0;
 for ii = 1:N-1
-    % pick the last point from dim2Points and remove it from list of distances.
-    dim2Points(3,validPtIndices(end)) = 0; % TODO: fix this index
-    % compute the distances of all the other points from the locus
-    [~,distIdx] = sort(vecnorm(validPoints(1:2,:) - locus));
-    % sort the points by distance
-    validPoints = validPoints(:,distIdx);
-    % put this vector inside HODLR_Mtrx
-    for jj = 1:N-(ii-1) % TODO: this needs to make a lower triangular matrix
-		HODLR_Mtrx(jj,ii) = rbfKernel(validPoints(1:2,jj),dim2Points(1:2,ii));
-    end
-    focus = validPoints(1:2,end);
-    validPoints = validPoints(1:2,1:N-ii)
+  % compute distances from the focus point to every point in the set.
+  [~,distIdx] = sort(vecnorm(dim2Points(1:2,dim2Points(3,:) == 1) - focusPt));
+  % sort the points in dim2Points into another set of 'valid points' we can
+  % evaluate.
+  validPoints = dim2Points(:,distIdx);
+  for jj = 1:N-ii
+    % evaluate the kernel against the focus point.
+    HODLR_Mtrx(N-jj,ii) = rbfKernel(validPoints(1:2,jj),focusPt);
+  end
+  focusPt = dim2Points(1:2,distIdx(1)); % change the 1 to 'end'.
+  dim2Points(3,distIdx(1)) = 0; % change the 1 to 'end.
 end
 
 figure(2)
 imagesc(HODLR_Mtrx)
 
 % Algorithm:
-% 
+% choose a random point
