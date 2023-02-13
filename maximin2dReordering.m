@@ -16,7 +16,7 @@ close all;
 N = 100;
 % a set of (x,y) points with an appended 0/1 vector indicating whether each
 % point has been visited.
-dim2Points = [randn(2,100);ones(1,100)];
+dim2Points = [randn(2,N);ones(1,N)];
 % Create a radial-basis function kernel
 rbfKernel = @(x,y) exp(-norm(x-y)^2);
 % Evaluate the kernel at all pairs of points
@@ -35,23 +35,26 @@ end
 % pick the first element in a random set to be the focus point.
 focusPt = dim2Points(1:2,1);
 % this point's distance will no longer be considered.
-dim2Points(3,1) = 0;
+validPoints = dim2Points(1:2,:);
 for ii = 1:N-1
-  % compute distances from the focus point to every point in the set.
-  [~,distIdx] = sort(vecnorm(dim2Points(1:2,dim2Points(3,:) == 1) - focusPt));
+  %scatter(dim2Points(1,:),dim2Points(2,:),[],dim2Points(3,:))
+  % compute distances from the focus point to every other point in the set.
+
+  % There is an issue on this line. distIdx allocates indices [1,99]; instead,
+  % we need to permute the remaining indices of dim2Points.
+  [~,distIdx] = sort(vecnorm(validPoints - focusPt));
   % sort the points in dim2Points into another set of 'valid points' we can
   % evaluate.
-  validPoints = dim2Points(:,distIdx);
-  for jj = 1:N-ii
-    % evaluate the kernel against the focus point.
-    HODLR_Mtrx(N-jj,ii) = rbfKernel(validPoints(1:2,jj),focusPt);
+  validPoints = validPoints(:,distIdx);
+  % evaluate the kernel against the focus point.
+  rbfVector = zeros(1,length(validPoints));
+  for jj = 1:length(validPoints)
+    rbfVector(jj) = rbfKernel(validPoints(:,jj),focusPt);
   end
-  focusPt = dim2Points(1:2,distIdx(1)); % change the 1 to 'end'.
-  dim2Points(3,distIdx(1)) = 0; % change the 1 to 'end.
+  HODLR_Mtrx(ii:N,ii) = rbfVector';
+  validPoints = validPoints(:,2:end);
+  focusPt = validPoints(:,1); % change the 1 to 'end'.
 end
 
 figure(2)
 imagesc(HODLR_Mtrx)
-
-% Algorithm:
-% choose a random point
