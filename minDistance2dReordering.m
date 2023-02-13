@@ -1,3 +1,5 @@
+% Author: Ibrohim Nosirov
+% Date: 2023-01-15
 % Version: 1.0
 % Description: a maximin algorithm for ordering points in 2 dimensions into a
 % HODLR-type matrix. The algorithm is based on the idea that faraway
@@ -30,9 +32,9 @@ end
 %figure(1)
 %imagesc(K)
 
-% toggle the choice of points.
-% pick the last element in a random set to be the focus point.
-focusPt = dim2Points(1:2,end);
+% pick the first element in a random set to be the focus point.
+focusPt = dim2Points(1:2,1);
+% this point's distance will no longer be considered.
 validPoints = dim2Points(1:2,:);
 for ii = 1:N-1
   %scatter(dim2Points(1,:),dim2Points(2,:),[],dim2Points(3,:))
@@ -50,9 +52,8 @@ for ii = 1:N-1
     rbfVector(jj) = rbfKernel(validPoints(:,jj),focusPt);
   end
   HODLR_Mtrx(ii:N,ii) = rbfVector';
-  % toggle the choice of points.
-  validPoints = validPoints(:,1:length(validPoints)-1);
-  focusPt = validPoints(:,end); % change the 1 to 'end'.
+  validPoints = validPoints(:,2:end);
+  focusPt = validPoints(:,1); % change the 1 to 'end'.
 end
 
 figure(2)
